@@ -1981,7 +1981,6 @@ prometheus_cr:
   probe_selector: null
   scrape_config_namespace_selector: null
   scrape_config_selector: null
-  scrape_interval: 30s
   service_monitor_namespace_selector: null
   service_monitor_selector: null
 `,
