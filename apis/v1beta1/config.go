@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package v1beta1
 
@@ -354,6 +343,10 @@ func (c *Config) ApplyDefaults(logger logr.Logger) error {
 // GetLivenessProbe gets the first enabled liveness probe. There should only ever be one extension enabled
 // that provides the hinting for the liveness probe.
 func (c *Config) GetLivenessProbe(logger logr.Logger) (*corev1.Probe, error) {
+	if c.Extensions == nil {
+		return nil, nil
+	}
+
 	enabledComponents := c.GetEnabledComponents()
 	for componentName := range enabledComponents[KindExtension] {
 		// TODO: Clean up the naming here and make it simpler to use a retriever.
@@ -370,6 +363,10 @@ func (c *Config) GetLivenessProbe(logger logr.Logger) (*corev1.Probe, error) {
 // GetReadinessProbe gets the first enabled readiness probe. There should only ever be one extension enabled
 // that provides the hinting for the readiness probe.
 func (c *Config) GetReadinessProbe(logger logr.Logger) (*corev1.Probe, error) {
+	if c.Extensions == nil {
+		return nil, nil
+	}
+
 	enabledComponents := c.GetEnabledComponents()
 	for componentName := range enabledComponents[KindExtension] {
 		// TODO: Clean up the naming here and make it simpler to use a retriever.

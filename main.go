@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package main
 
@@ -126,6 +115,7 @@ func main() {
 		enableNodeJSInstrumentation      bool
 		enableJavaInstrumentation        bool
 		enableCRMetrics                  bool
+		createSMOperatorMetrics          bool
 		collectorImage                   string
 		targetAllocatorImage             string
 		operatorOpAMPBridgeImage         string
@@ -137,7 +127,6 @@ func main() {
 		autoInstrumentationNginx         string
 		autoInstrumentationGo            string
 		labelsFilter                     []string
-		tmplabelsFilter                  []string
 		annotationsFilter                []string
 		webhookPort                      int
 		tlsOpt                           tlsConfig
@@ -165,6 +154,7 @@ func main() {
 	pflag.BoolVar(&enableNodeJSInstrumentation, constants.FlagNodeJS, true, "Controls whether the operator supports nodejs auto-instrumentation")
 	pflag.BoolVar(&enableJavaInstrumentation, constants.FlagJava, true, "Controls whether the operator supports java auto-instrumentation")
 	pflag.BoolVar(&enableCRMetrics, constants.FlagCRMetrics, false, "Controls whether exposing the CR metrics is enabled")
+	pflag.BoolVar(&createSMOperatorMetrics, "create-sm-operator-metrics", false, "Create a ServiceMonitor for the operator metrics")
 
 	stringFlagOrEnv(&collectorImage, "collector-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:%s", v.OpenTelemetryCollector), "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&targetAllocatorImage, "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:%s", v.TargetAllocator), "The default OpenTelemetry target allocator image. This image is used when no image is specified in the CustomResource.")
@@ -177,7 +167,6 @@ func main() {
 	stringFlagOrEnv(&autoInstrumentationApacheHttpd, "auto-instrumentation-apache-httpd-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_APACHE_HTTPD", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:%s", v.AutoInstrumentationApacheHttpd), "The default OpenTelemetry Apache HTTPD instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationNginx, "auto-instrumentation-nginx-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_NGINX", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:%s", v.AutoInstrumentationNginx), "The default OpenTelemetry Nginx instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringArrayVar(&labelsFilter, "labels-filter", []string{}, "Labels to filter away from propagating onto deploys. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --labels-filter=.*filter.out will filter out labels that looks like: label.filter.out: true")
-	pflag.StringArrayVar(&tmplabelsFilter, "label", []string{}, "(Deprecated, please use the labels-filter flag) Labels to filter away from propagating onto deploys. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --label=.*filter.out will filter out labels that looks like: label.filter.out: true")
 	pflag.StringArrayVar(&annotationsFilter, "annotations-filter", []string{}, "Annotations to filter away from propagating onto deploys. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --annotations-filter=.*filter.out will filter out annotations that looks like: annotation.filter.out: true")
 	pflag.StringVar(&tlsOpt.minVersion, "tls-min-version", "VersionTLS12", "Minimum TLS version supported. Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants.")
 	pflag.StringSliceVar(&tlsOpt.cipherSuites, "tls-cipher-suites", nil, "Comma-separated list of cipher suites for the server. Values are from tls package constants (https://golang.org/pkg/crypto/tls/#pkg-constants). If omitted, the default Go cipher suites will be used")
@@ -188,9 +177,6 @@ func main() {
 	pflag.StringVar(&fipsDisabledComponents, "fips-disabled-components", "uppercase", "Disabled collector components when operator runs on FIPS enabled platform. Example flag value =receiver.foo,receiver.bar,exporter.baz")
 	pflag.IntVar(&webhookPort, "webhook-port", 9443, "The port the webhook endpoint binds to.")
 	pflag.Parse()
-
-	// Using labelfilters both from label and labels-filter flags, until label flag is removed
-	labelsFilter = append(labelsFilter, tmplabelsFilter...)
 
 	opts.EncoderConfigOptions = append(opts.EncoderConfigOptions, func(ec *zapcore.EncoderConfig) {
 		ec.MessageKey = encodeMessageKey
@@ -230,6 +216,7 @@ func main() {
 		"enable-nodejs-instrumentation", enableNodeJSInstrumentation,
 		"enable-java-instrumentation", enableJavaInstrumentation,
 		"create-openshift-dashboard", createOpenShiftDashboard,
+		"create-sm-operator-metrics", createSMOperatorMetrics,
 		"zap-message-key", encodeMessageKey,
 		"zap-level-key", encodeLevelKey,
 		"zap-time-key", encodeTimeKey,
@@ -424,7 +411,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if cfg.PrometheusCRAvailability() == prometheus.Available {
+	if cfg.PrometheusCRAvailability() == prometheus.Available && createSMOperatorMetrics {
 		operatorMetrics, opError := operatormetrics.NewOperatorMetrics(mgr.GetConfig(), scheme, ctrl.Log.WithName("operator-metrics-sm"))
 		if opError != nil {
 			setupLog.Error(opError, "Failed to create the operator metrics SM")
