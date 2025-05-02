@@ -30,7 +30,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/logger"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/logger"
 )
 
 const (
@@ -204,7 +204,7 @@ func keyValuePair(key string, value string) *protobufs.KeyValue {
 func mustGetInstanceId() uuid.UUID {
 	u, err := uuid.NewV7()
 	if err != nil {
-		// This really should never happen and if it does we should fail.
+		// This really should never happen and if it does, we should fail.
 		panic(err)
 	}
 	return u

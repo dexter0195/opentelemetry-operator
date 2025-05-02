@@ -5,10 +5,10 @@ change_type: bug_fix
 component: collector
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: "Add nil check for Extensions in GetLivenessProbe and GetReadinessProbe functions"
+note: "Set the `statusReplicas` field for the `DaemonSet`"
 
 # One or more tracking issues related to the change
-issues: [3747]
+issues: [3930]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
