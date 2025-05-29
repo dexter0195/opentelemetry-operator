@@ -9,10 +9,10 @@ import (
 	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/go-logr/logr"
+	go_yaml "github.com/goccy/go-yaml"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/require"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
-	go_yaml "gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -3148,7 +3148,9 @@ service:
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
-						Labels:    nil,
+						Labels: map[string]string{
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+						},
 					},
 					Spec: v1alpha1.TargetAllocatorSpec{
 						FilterStrategy:     v1beta1.TargetAllocatorFilterStrategyRelabelConfig,
@@ -3390,7 +3392,9 @@ service:
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
-						Labels:    nil,
+						Labels: map[string]string{
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+						},
 					},
 					Spec: v1alpha1.TargetAllocatorSpec{
 						FilterStrategy: v1beta1.TargetAllocatorFilterStrategyRelabelConfig,
